@@ -5,9 +5,9 @@ import com.learningstuff.springmultiplesecurity.securities.JwtFilterRequest;
 import com.learningstuff.springmultiplesecurity.securities.MyAuthenticationEntryPoint;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -26,41 +26,85 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @AllArgsConstructor
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
-    private final MyAuthenticationEntryPoint myAuthenticationEntryPoint;
+    @Order(1)
+    @Configuration
+    @AllArgsConstructor
+    public static class BearerTokenConfiguration extends WebSecurityConfigurerAdapter {
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+        private final MyAuthenticationEntryPoint myAuthenticationEntryPoint;
 
-        http.cors().disable().csrf().disable();
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
 
-        http.formLogin().disable().httpBasic().disable();
+            http.cors().disable().csrf().disable();
 
-        http.exceptionHandling()
-                .authenticationEntryPoint(myAuthenticationEntryPoint)
-                .and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeRequests()
-                .antMatchers("/login").permitAll()
-                .anyRequest()
-                .authenticated();
+            http.formLogin().disable().httpBasic().disable();
 
-        http
-                .addFilterBefore(new JwtFilterRequest(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new APIKeyFilterRequest(), UsernamePasswordAuthenticationFilter.class);
+            http.antMatcher("/api/v1/**").exceptionHandling()
+                    .authenticationEntryPoint(myAuthenticationEntryPoint)
+                    .and()
+                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
+                    .authorizeRequests()
+                    .antMatchers("/login").permitAll()
+                    .anyRequest()
+                    .authenticated();
+
+            http.addFilterBefore(new JwtFilterRequest(), UsernamePasswordAuthenticationFilter.class);
+
+        }
 
     }
 
-//    @Override
-//    public void configure(WebSecurity web) throws Exception {
-//
-//        web.ignoring()
-//                .antMatchers("/login");
-//
-//    }
+    @Order(2)
+    @Configuration
+    @AllArgsConstructor
+    public static class APIKeyConfiguration extends WebSecurityConfigurerAdapter {
 
+        private final MyAuthenticationEntryPoint myAuthenticationEntryPoint;
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+
+            http.cors().disable().csrf().disable();
+
+            http.formLogin().disable().httpBasic().disable();
+
+            http.antMatcher("/api/v2/**").exceptionHandling()
+                    .authenticationEntryPoint(myAuthenticationEntryPoint)
+                    .and()
+                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
+                    .authorizeRequests()
+                    .antMatchers("/login").permitAll()
+                    .anyRequest()
+                    .authenticated();
+
+            http.addFilterBefore(new APIKeyFilterRequest(), UsernamePasswordAuthenticationFilter.class);
+
+        }
+    }
+
+    @Order(3)
+    @Configuration
+    public static class WebConfiguration extends WebSecurityConfigurerAdapter {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+
+            http
+                    .antMatcher("/**")
+                    .csrf()
+                    .and()
+                    .authorizeRequests()
+                    .anyRequest().authenticated()
+                    .and()
+                    .formLogin().permitAll();
+        }
+
+    }
 
 }
 

@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
  * To change this template use File | Settings | File and Code Templates.
  */
 
-@RequestMapping(value = "/courses")
+@RequestMapping(value = "/api/v1/courses")
 @RestController
-public class CourseController {
+public class CourseControllerV1 {
 
-    @GetMapping
+    @GetMapping(value = "")
     public ResponseEntity<?> getAllCourser() {
-        return ResponseEntity.ok("All courses");
+        return ResponseEntity.ok("All courses from v1.");
     }
 
 }
