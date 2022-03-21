@@ -2,6 +2,7 @@ package com.learningstuff.springmultiplesecurity.securities;
 
 import com.learningstuff.springmultiplesecurity.payloads.CustomPrincipal;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -25,7 +26,6 @@ import java.util.ArrayList;
  */
 
 @Slf4j
-@Component
 public class APIKeyFilterRequest extends OncePerRequestFilter {
 
     @Override
@@ -34,16 +34,16 @@ public class APIKeyFilterRequest extends OncePerRequestFilter {
 
         final String apiKey = request.getHeader("api-key");
 
-        log.info("Request api-key: {}", apiKey);
+        log.info("API key authentication processing for {}", request.getRequestURL());
 
         // Once we get the token validate it.
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null && StringUtils.isNotEmpty(apiKey)) {
 
             log.info("Try to authenticate with API Key.");
 
             // if token is valid configure Spring Security to manually set
             // authentication
-            if (apiKey != null && apiKey.equals("api-key")) {
+            if (apiKey.equals("84bfd081-28f4-44fd-81d7-311a5bce1ba4")) {
 
                 CustomPrincipal customPrincipal = new CustomPrincipal();
 

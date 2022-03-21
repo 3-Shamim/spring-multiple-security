@@ -1,11 +1,16 @@
 package com.learningstuff.springmultiplesecurity.securities;
 
 import com.learningstuff.springmultiplesecurity.payloads.CustomPrincipal;
+import com.learningstuff.springmultiplesecurity.utills.JwtTokenUtil;
+import com.learningstuff.springmultiplesecurity.utills.SecurityUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -13,7 +18,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,41 +29,40 @@ import java.util.ArrayList;
  */
 
 @Slf4j
-@Component
 public class JwtFilterRequest extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        final String requestTokenHeader = request.getHeader("Authorization");
+        log.info("Bearer token authentication processing for {}", request.getRequestURL());
 
-        log.info("Request Authorization: {}", requestTokenHeader);
+        SecurityUtil.getTokenFromRequestHeader(request).ifPresent(token -> {
 
-        // Once we get the token validate it.
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
 
-            log.info("Try to authenticate with JWT.");
+                if (JwtTokenUtil.isValidToken(token)) {
+                    if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // if token is valid configure Spring Security to manually set
-            // authentication
-            if (requestTokenHeader != null && requestTokenHeader.equals("Bearer jwt")) {
+                        CustomPrincipal customPrincipal = JwtTokenUtil.getTokenHolderDetails(token);
 
-                CustomPrincipal customPrincipal = new CustomPrincipal();
+                        if (customPrincipal != null) {
+                            UsernamePasswordAuthenticationToken authentication = SecurityUtil.getAuthentication(customPrincipal);
+                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                        customPrincipal, null, new ArrayList<>());
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            log.info("Successfully authenticate with bearer token.");
+                        }
 
-                // After setting the Authentication in the context, we specify
-                // that the current user is authenticated. So it passes the
-                // Spring Security Configurations successfully.
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                    }
+                }
 
-                log.info("Successfully authenticate with JWT.");
-
+            } catch (SignatureException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | ExpiredJwtException e) {
+                log.error(e.getMessage());
             }
-        }
+
+        });
+
         chain.doFilter(request, response);
     }
 

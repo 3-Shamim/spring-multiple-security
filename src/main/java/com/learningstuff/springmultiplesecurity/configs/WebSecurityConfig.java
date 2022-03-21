@@ -33,8 +33,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http.cors().and().csrf().disable();
-        http.formLogin().and().httpBasic().disable();
+        http.cors().disable().csrf().disable();
+
+        http.formLogin().disable().httpBasic().disable();
 
         http.exceptionHandling()
                 .authenticationEntryPoint(myAuthenticationEntryPoint)
@@ -42,6 +43,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
+                .antMatchers("/login").permitAll()
                 .anyRequest()
                 .authenticated();
 
@@ -51,13 +53,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     }
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-
-        web.ignoring()
-                .antMatchers( "/login");
-
-    }
+//    @Override
+//    public void configure(WebSecurity web) throws Exception {
+//
+//        web.ignoring()
+//                .antMatchers("/login");
+//
+//    }
 
 
 }

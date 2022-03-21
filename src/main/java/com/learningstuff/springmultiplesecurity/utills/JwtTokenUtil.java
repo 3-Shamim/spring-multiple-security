@@ -27,7 +27,7 @@ public class JwtTokenUtil {
     public static String generateToken(CustomPrincipal principal) {
 
         Date issuedAt = new Date();
-        Date expiryDate = calculateExpirationDate(846000);
+        Date expiryDate = calculateExpirationDate(86400000);
 
         return Jwts.builder()
                 .claim("CURRENT_USER", principal)
